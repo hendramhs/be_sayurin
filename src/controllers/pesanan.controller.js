@@ -82,3 +82,53 @@ export const createPesanan = async (req, res) => {
     });
   }
 };
+
+
+export const getPesananAdmin = async (req, res) => {
+  const [rows] = await db.query(`
+    SELECT p.pesanan_id, u.nama, p.tanggal,
+           p.total_barang, p.ongkir,
+           p.total_bayar, p.status
+    FROM pesanan p
+    JOIN users u ON p.user_id = u.user_id
+    ORDER BY p.pesanan_id DESC
+  `);
+
+  res.json(rows);
+};
+
+export const getDetailPesanan = async (req, res) => {
+  const { id } = req.params;
+
+  const [items] = await db.query(`
+    SELECT s.nama_sayur, d.jumlah,
+           d.harga_satuan, d.subtotal
+    FROM detail_pesanan d
+    JOIN sayur s ON d.sayur_id = s.sayur_id
+    WHERE d.pesanan_id = ?
+  `, [id]);
+
+  res.json(items);
+};
+
+export const updateStatusPesanan = async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+
+  if (!["Approved", "Rejected"].includes(status)) {
+    return res.json({
+      success: false,
+      message: "Status tidak valid"
+    });
+  }
+
+  await db.query(
+    "UPDATE pesanan SET status = ? WHERE pesanan_id = ?",
+    [status, id]
+  );
+
+  res.json({
+    success: true,
+    message: `Pesanan berhasil ${status}`
+  });
+};
