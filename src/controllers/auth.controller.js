@@ -31,16 +31,15 @@ export const login = async (req, res) => {
 
 // register
 export const register = async (req, res) => {
-  const { nama, no_hp, alamat, password } = req.body;
+  const { nama, no_hp, password } = req.body;
 
-  if (!nama || !no_hp || !alamat || !password) {
+  if (!nama || !no_hp || !password) {
     return res.json({
       success: false,
-      message: "Semua field wajib diisi"
+      message: "Nama, No HP, dan Password wajib diisi"
     });
   }
 
-  // cek no_hp sudah ada
   const [check] = await db.query(
     "SELECT user_id FROM users WHERE no_hp = ?",
     [no_hp]
@@ -55,13 +54,15 @@ export const register = async (req, res) => {
 
   const hashedPassword = await bcrypt.hash(password, 10);
 
-  await db.query(
-    "INSERT INTO users (nama, no_hp, alamat, role, password) VALUES (?, ?, ?, 'client', ?)",
-    [nama, no_hp, alamat, hashedPassword]
+  const [result] = await db.query(
+    `INSERT INTO users (nama, no_hp, role, password)
+     VALUES (?, ?, 'client', ?)`,
+    [nama, no_hp, hashedPassword]
   );
 
   res.json({
     success: true,
-    message: "Registrasi berhasil"
+    message: "Registrasi berhasil",
+    user_id: result.insertId
   });
 };
