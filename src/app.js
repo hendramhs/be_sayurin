@@ -8,6 +8,7 @@ import sayurRoutes from "./routes/sayur.routes.js";
 import pesananRoutes from "./routes/pesanan.routes.js";
 import pengirimanRoutes from "./routes/pengiriman.routes.js";
 import addressRoutes from "./routes/address.routes.js";
+import cartRoutes from "./routes/cart.routes.js";
 
 const app = express();
 app.use(cors());
@@ -18,5 +19,7 @@ app.use("/api/sayur", sayurRoutes);
 app.use("/api/pesanan", pesananRoutes);
 app.use("/api/pengiriman", pengirimanRoutes);
 app.use("/api/addresses", addressRoutes);
+app.use("/api/cart", cartRoutes);
+
 console.log("API KEY:", process.env.KOMERCE_API_KEY);
 export default app;

@@ -185,3 +185,39 @@ export const deleteAddress = async (req, res) => {
     });
   }
 };
+
+/**
+ * CARI DESTINASI (AUTO COMPLETE)
+ */
+export const searchDestinations = async (req, res) => {
+  try {
+    const { query } = req.query;
+    if (!query) {
+      return res.status(400).json({
+        success: false,
+        message: "Query parameter diperlukan"
+      });
+    }
+    const komerceRes = await axios.get(
+      "https://api-sandbox.collaborator.komerce.id/tariff/api/v1/destinations/search",
+      {
+        headers: {
+          "x-api-key": process.env.KOMERCE_API_KEY
+        },
+        params: {
+          query
+        }
+      }
+    );
+    res.json({
+      success: true,
+      destinations: komerceRes.data?.data || []
+    });
+  } catch (error) {
+    console.error("SEARCH DESTINATIONS ERROR:", error.response?.data || error.message);
+    res.status(500).json({
+      success: false,
+      message: "Gagal mencari destinasi"
+    });
+  }
+};
