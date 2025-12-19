@@ -1,4 +1,5 @@
 import { db } from "../config/db.js";
+import axios from "axios";
 
 /**
  * ==========================
@@ -191,28 +192,32 @@ export const deleteAddress = async (req, res) => {
  */
 export const searchDestinations = async (req, res) => {
   try {
-    const { query } = req.query;
-    if (!query) {
+    const { keyword } = req.query;
+
+    if (!keyword) {
       return res.status(400).json({
         success: false,
-        message: "Query parameter diperlukan"
+        message: "Keyword parameter diperlukan"
       });
     }
+
     const komerceRes = await axios.get(
-      "https://api-sandbox.collaborator.komerce.id/tariff/api/v1/destinations/search",
+      "https://api-sandbox.collaborator.komerce.id/tariff/api/v1/destination/search",
       {
         headers: {
           "x-api-key": process.env.KOMERCE_API_KEY
         },
         params: {
-          query
+          keyword
         }
       }
     );
+
     res.json({
       success: true,
       destinations: komerceRes.data?.data || []
     });
+
   } catch (error) {
     console.error("SEARCH DESTINATIONS ERROR:", error.response?.data || error.message);
     res.status(500).json({
@@ -221,3 +226,4 @@ export const searchDestinations = async (req, res) => {
     });
   }
 };
+

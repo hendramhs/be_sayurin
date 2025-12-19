@@ -9,7 +9,7 @@ import {
 } from "../controllers/address.controller.js";
 
 const router = express.Router();
-
+  
 router.post("/add", addAddress);
 router.get("/user/:user_id", getAddressesByUser);
 router.get("/default/:user_id", getDefaultAddress);
