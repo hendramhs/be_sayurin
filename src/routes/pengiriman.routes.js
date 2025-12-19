@@ -1,6 +1,7 @@
 import express from "express";
 import {
   hitungOngkir,
+  hitungOngkirV2,
   pilihPengiriman
 } from "../controllers/pengiriman.controller.js";
 
@@ -12,6 +13,7 @@ const router = express.Router();
 |--------------------------------------------------------------------------
 */
 router.post("/hitung", hitungOngkir);
+router.post("/hitung-v2", hitungOngkirV2);
 
 /*
 |--------------------------------------------------------------------------

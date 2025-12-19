@@ -57,6 +57,17 @@ export const deleteCartItem = async (req, res) => {
   }
 };
 
+// 3. HAPUS SEMUA ITEM KERANJANG USER
+export const clearCart = async (req, res) => {
+  const { user_id } = req.params;
+  try {
+    await db.query("DELETE FROM keranjang WHERE user_id = ?", [user_id]);
+    res.json({ success: true, message: "Semua item di keranjang dihapus" });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 // 4. UPDATE JUMLAH (Tombol + / - di UI)
 export const updateCartQuantity = async (req, res) => {
   const { cart_id } = req.params;

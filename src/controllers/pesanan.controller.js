@@ -20,13 +20,13 @@ export const createPesanan = async (req, res) => {
 
   try {
     let totalBarang = 0;
-    let totalBerat = 0;
+    let totalBerat = 0; // disimpan dalam KILOGRAM
 
     const detailItems = [];
 
     for (const item of items) {
       const [rows] = await db.query(
-        "SELECT harga FROM sayur WHERE sayur_id = ?",
+        "SELECT harga, satuan FROM sayur WHERE sayur_id = ?",
         [item.sayur_id]
       );
 
@@ -37,19 +37,31 @@ export const createPesanan = async (req, res) => {
         });
       }
 
-      const harga = rows[0].harga;
-      const subtotal = harga * item.jumlah;
+      const harga = Number(rows[0].harga) || 0;
+      const unit = String(rows[0].satuan || "kg").trim().toLowerCase();
+      const qty = Number(item.jumlah) || 0;
 
+      const subtotal = harga * qty;
       totalBarang += subtotal;
-      totalBerat += item.jumlah * 1000; // 1 kg = 1000 gram
+
+      // konversi jumlah ke kilogram
+      let qtyKg = qty;
+      if (unit === "gram" || unit === "g") qtyKg = qty / 1000;
+      else if (unit === "ons") qtyKg = qty * 0.1; // 1 ons = 100 gram
+      // default selain itu dianggap kg
+
+      totalBerat += qtyKg;
 
       detailItems.push({
         sayur_id: item.sayur_id,
-        jumlah: item.jumlah,
+        jumlah: qty,
         harga_satuan: harga,
         subtotal
       });
     }
+
+    // bulatkan 3 desimal untuk konsistensi
+    totalBerat = Number(totalBerat.toFixed(3));
 
     const [result] = await db.query(
       `INSERT INTO pesanan
@@ -74,7 +86,7 @@ export const createPesanan = async (req, res) => {
       message: "Pesanan berhasil dibuat",
       pesanan_id: pesananId,
       total_barang: totalBarang,
-      total_berat: totalBerat
+      total_berat: totalBerat // kg
     });
 
   } catch (error) {
@@ -93,12 +105,59 @@ export const createPesanan = async (req, res) => {
 */
 export const getPesananAdmin = async (req, res) => {
   const [rows] = await db.query(`
-    SELECT p.pesanan_id, u.nama, p.tanggal,
-           p.total_barang, p.ongkir, p.total_bayar, p.status
+    SELECT
+      p.pesanan_id,
+      u.nama,
+      p.tanggal,
+      p.total_barang,
+      p.total_berat AS total_berat_kg,
+      p.ongkir,
+      p.total_bayar,
+      p.status,
+      pg.shipping_name,
+      pg.service_name,
+      pg.etd,
+      pg.shipper_destination_id,
+      pg.receiver_destination_id,
+      pg.kota_asal,
+      pg.kota_tujuan,
+      pg.shipping_cost,
+      pg.service_fee
     FROM pesanan p
     JOIN users u ON p.user_id = u.user_id
+    LEFT JOIN pengiriman pg ON pg.pesanan_id = p.pesanan_id
     ORDER BY p.pesanan_id DESC
   `);
+
+  res.json(rows);
+};
+
+/*
+|--------------------------------------------------------------------------
+| USER - LIST PESANAN
+|--------------------------------------------------------------------------
+*/
+export const getPesananUser = async (req, res) => {
+  const { user_id } = req.params;
+  const [rows] = await db.query(`
+    SELECT
+      p.pesanan_id,
+      p.tanggal,
+      p.total_barang,
+      p.total_berat AS total_berat_kg,
+      p.ongkir,
+      p.total_bayar,
+      p.status,
+      pg.shipping_name,
+      pg.service_name,
+      pg.etd,
+      pg.kota_asal,
+      pg.kota_tujuan
+    FROM pesanan p
+    LEFT JOIN pengiriman pg ON pg.pesanan_id = p.pesanan_id
+    WHERE p.user_id = ?
+    ORDER BY p.pesanan_id DESC
+  `, [user_id]);
 
   res.json(rows);
 };
@@ -112,7 +171,7 @@ export const getDetailPesanan = async (req, res) => {
   const { id } = req.params;
 
   const [items] = await db.query(`
-    SELECT s.nama_sayur, d.jumlah, d.harga_satuan, d.subtotal
+    SELECT s.nama_sayur, s.satuan, d.jumlah, d.harga_satuan, d.subtotal
     FROM detail_pesanan d
     JOIN sayur s ON d.sayur_id = s.sayur_id
     WHERE d.pesanan_id = ?
